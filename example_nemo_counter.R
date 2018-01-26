@@ -1,8 +1,6 @@
-setwd("/home/dosimont/Git/programs/ptools/lpaggreg/R")
-
-lpaggreg_location="/opt/ptools/lpaggreg";
-source("lpaggreg.R", echo=TRUE, local=TRUE)
-source("lpaggreg_pjdump.R", echo=TRUE, local=TRUE)
+library(devtools)
+install_github("dosimont/lpaggregr")
+library(lpaggregr)
 
 #Threshold: 0<th<1, lower value means more accuracy for retrieving the list of partitions but longer computation time
 th=0.001

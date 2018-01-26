@@ -1,10 +1,6 @@
-rm(list=ls())
-setwd("/home/dosimont/Git/programs/ptools/lpaggreg/R")
-
-
-lpaggreg_location="/opt/ptools/lpaggreg";
-source("lpaggreg.R", echo=TRUE, local=TRUE)
-source("lpaggreg_pjdump.R", echo=TRUE, local=TRUE)
+library(devtools)
+install_github("dosimont/lpaggregr")
+library(lpaggregr)
 
 #Synthetic example: 2 processes, 2 types, 5 timeslices (keep the same order)
 testArray = array(dim=c(2,2,5))

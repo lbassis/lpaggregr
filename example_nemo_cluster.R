@@ -1,16 +1,6 @@
 library(devtools)
 install_github("dosimont/lpaggregr")
-library(RcppArmadillo)
 library(lpaggregr)
-
-library(sqldf)
-library(dplyr)
-library(ggplot2)
-library(reshape2)
-library(RColorBrewer)
-library(treemap)
-library(gplots)
-
 
 #Threshold: 0<th<1, lower value means more accuracy for retrieving the list of partitions but longer computation time
 th=0.001
