@@ -25,6 +25,7 @@ str(list_of_ps)
 lapply(list_of_ps,
        function(p){
            oplot_stacked_state(omacro(odf$Partitions, micro, p)) +
-               coord_cartesian(ylim=c(0,0.0100), xlim=c(0,100))
+               coord_cartesian(ylim=c(0,0.0100), xlim=c(0,100)) +
+               ggtitle(paste("p:", p, "optimale:", p==odf$POpt))
        }) -> z
 z
