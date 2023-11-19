@@ -28,3 +28,38 @@ wget https://zenodo.org/records/7649490/files/traces.tar.xz
 #+begin_src shell :results output :exports both
 tar vfxJ traces.tar.xz  traces/chameleon_exps/chameleon_simu_vis_COMMG__96000__30/
 #+end_src
+*** Attempt to read
+#+begin_src R :results output :session *R* :exports both :noweb yes :colnames yes
+options(crayon.enabled=FALSE)
+library(tidyverse)
+library(arrow)
+library(janitor)
+df.tasks <- read_parquet("traces/chameleon_exps/chameleon_simu_vis_COMMG__96000__30/tasks.parquet") |>
+  clean_names() |>
+  select(job_id, mpi_rank, start_time, end_time)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :results output :session *R* :exports both :noweb yes :colnames yes
+df.tasks
+#+end_src
+
+#+RESULTS:
+#+begin_example
+# A tibble: 1,292,909 × 4
+   job_id mpi_rank start_time end_time
+   <chr>     <int>      <dbl>    <dbl>
+ 1 0_1           0          0     19.3
+ 2 1_1           1          0     19.3
+ 3 2_1           2          0     19.3
+ 4 3_1           3          0     19.3
+ 5 4_1           4          0     19.3
+ 6 5_1           5          0     19.3
+ 7 6_1           6          0     19.3
+ 8 7_1           7          0     19.3
+ 9 8_1           8          0     19.3
+10 9_1           9          0     19.3
+# ℹ 1,292,899 more rows
+# ℹ Use `print(n = ...)` to see more rows
+#+end_example
