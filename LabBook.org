@@ -82,7 +82,7 @@ lpaggreg_utilization <- function(TRACE.pjdump) {
   #odf$POpt
   list_of_ps <- as.list(unique(odf$Partitions$Parameter, 3))
   str(list_of_ps)
-  lapply(list_of_ps[[1]],
+  lapply(list_of_ps,
        function(p){
            oplot_stacked_state(omacro(odf$Partitions, micro, p)) +
                coord_cartesian(ylim=c(0,0.0100), xlim=c(0,100)) +
