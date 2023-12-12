@@ -11,55 +11,119 @@
 - [X] Modified script to consider only application tasks
   [[./example_cholesky.R]] You can run it with Rscript.
 - [X] Resulting Rplots.pdf will show the temporal aggregation for all values of P.
-** Larger case from a previous published article
-*** Description
+* Larger case from a previous published article
+** Description
 Data origin: *Summarizing task-based applications behavior over many
 nodes through progression clustering* by Lucas Leandro Nesi, Vinícius
 Garcia Pinto, Lucas Mello Schnorr, and Arnaud Legrand accept for
 publication in 31st Euromicro International Conference on Parallel,
 Distributed, and Network-Based Processing (PDP 2023). The remaining of
 the companion is at: https://gitlab.com/lnesi/companion-pdp-2023.
-*** Download data from
+** Download data from
 https://zenodo.org/records/7649490
 #+begin_src shell :results output :exports both
 wget https://zenodo.org/records/7649490/files/traces.tar.xz
 #+end_src
-*** Unpack indicated data
+** Uncompact everything
 #+begin_src shell :results output :exports both
-tar vfxJ traces.tar.xz  traces/chameleon_exps/chameleon_simu_vis_COMMG__96000__30/
+tar vfxJ traces.tar.xz
 #+end_src
-*** Attempt to read
+
+** Install StarVZ
+
+#+begin_src R :results table :session *R* :exports both :noweb yes :colnames yes :eval no
+Sys.setenv(NOT_CRAN = 'true')
+install.packages("starvz")
+#+end_src
+** Function: Read with StarVZ and export for pjdump
+:PROPERTIES:
+:header-args: :tangle chameleon-simu-vis-COMMG--96000--30.R :tangle-mode (identity #o755) :shebang "#!/usr/bin/Rscript"
+:END:
+#+begin_src R :results output :session *R* :exports both :noweb yes :colnames yes
+read_starvz_export_pjdump <- function(TRACE.base, TRACE.signature) {
+  TRACE.dir <- paste0(TRACE.base, "/", TRACE.signature)
+  TRACE.pjdump <- paste0(TRACE.signature, ".pjdump")
+  options(crayon.enabled=FALSE)
+  library(tidyverse)
+  library(starvz)
+  df <- starvz_read(TRACE.dir)
+  df$Application |>
+    mutate(Nature = "State") |>
+    mutate(Type = "Task") |>
+    select(Nature, ResourceId, Type, Start, End, Duration, Depth, Value) |>
+    write_csv(TRACE.pjdump, col_names=FALSE)
+  # Gantt-chart
+  df$config$base_size <- 9
+  df$config$st$labels <- "1GPU_per_NODE"
+  df$config$st$abe$active <- TRUE
+  panel_st(df, agg_met = "method")
+  my.colors <- starvz:::extract_colors(df$Application, df$Color)
+  my.colors
+}
+#+end_src
+
+#+RESULTS:
+
+** Function: lpaggreg utilization
+:PROPERTIES:
+:header-args: :tangle chameleon-simu-vis-COMMG--96000--30.R :tangle-mode (identity #o755) :shebang "#!/usr/bin/Rscript"
+:END:
 #+begin_src R :results output :session *R* :exports both :noweb yes :colnames yes
 options(crayon.enabled=FALSE)
 library(tidyverse)
-library(arrow)
-library(janitor)
-df.tasks <- read_parquet("traces/chameleon_exps/chameleon_simu_vis_COMMG__96000__30/tasks.parquet") |>
-  clean_names() |>
-  select(job_id, mpi_rank, start_time, end_time)
+library(lpaggregr)
+lpaggreg_utilization <- function(TRACE.pjdump) {
+  th=0.0001
+  #Without hierarchy
+  trace <- parsepjdump(TRACE.pjdump)
+  micro <- pjdump2micro(trace, 100,"State",FALSE)
+  odf <- oaggregate(micro$data, th)
+  qualplot(odf)
+  #odf$POpt
+  list_of_ps <- as.list(unique(odf$Partitions$Parameter, 3))
+  str(list_of_ps)
+  lapply(list_of_ps,
+       function(p){
+           oplot_stacked_state(omacro(odf$Partitions, micro, p)) +
+               coord_cartesian(ylim=c(0,0.0100), xlim=c(0,100)) +
+               ggtitle(paste("p:", p, "optimale:", p==odf$POpt)) +
+             scale_fill_manual(values = my.colors)
+       }) -> z
+  z
+}
 #+end_src
 
 #+RESULTS:
 
+** List cases in Zenodo URL
+:PROPERTIES:
+:header-args: :tangle chameleon-simu-vis-COMMG--96000--30.R :tangle-mode (identity #o755) :shebang "#!/usr/bin/Rscript"
+:END:
 #+begin_src R :results output :session *R* :exports both :noweb yes :colnames yes
-df.tasks
+cases.list <- c(
+	"traces/exageo",
+	"traces/chameleon_exps/chameleon_simu_vis_2W+DIF__96000__30",
+	"traces/chameleon_exps/chameleon_simu_vis_COMMG__96000__30",
+	"traces/chameleon_exps/chameleon_simu_vis_COMM1N__96000__30",
+	"traces/chameleon_exps/chameleon_simu_vis_N2GPUL__96000__30",
+	"traces/chameleon_exps/chameleon_simu_vis_BASE__96000__30")
+cases.list
 #+end_src
 
-#+RESULTS:
-#+begin_example
-# A tibble: 1,292,909 × 4
-   job_id mpi_rank start_time end_time
-   <chr>     <int>      <dbl>    <dbl>
- 1 0_1           0          0     19.3
- 2 1_1           1          0     19.3
- 3 2_1           2          0     19.3
- 4 3_1           3          0     19.3
- 5 4_1           4          0     19.3
- 6 5_1           5          0     19.3
- 7 6_1           6          0     19.3
- 8 7_1           7          0     19.3
- 9 8_1           8          0     19.3
-10 9_1           9          0     19.3
-# ℹ 1,292,899 more rows
-# ℹ Use `print(n = ...)` to see more rows
-#+end_example
+** Do for all traces contained in Zenodo
+:PROPERTIES:
+:header-args: :tangle chameleon-simu-vis-COMMG--96000--30.R :tangle-mode (identity #o755) :shebang "#!/usr/bin/Rscript"
+:END:
+#+begin_src R :results output :session *R* :exports both :noweb yes :colnames yes
+lapply(cases.list, function(ELEMENT) {
+    TRACE.signature <- basename(ELEMENT)
+    TRACE.dir <- dirname(ELEMENT)
+    TRACE.pjdump <- paste0(TRACE.signature, ".pjdump")
+    TRACE.pdf <-  paste0(TRACE.signature, ".pdf")
+    pdf(file=TRACE.pdf)    
+    read_starvz_export_pjdump(TRACE.dir, TRACE.signature)
+    lpaggreg_utilization(TRACE.pjdump)
+    dev.off()
+  }) -> z
+#+end_src
+>>>>>>> df97c20 (generate plots for all cases coming from zenodo URL)
