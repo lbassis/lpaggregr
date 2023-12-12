@@ -56,9 +56,9 @@ read_starvz_export_pjdump <- function(TRACE.base, TRACE.signature) {
   df$config$base_size <- 9
   df$config$st$labels <- "1GPU_per_NODE"
   df$config$st$abe$active <- TRUE
-  panel_st(df, agg_met = "method")
-  my.colors <<- starvz:::extract_colors(df$Application, df$Color)
-  my.colors
+  my.colors <<- starvz:::extract_colors(df$Application, df$Color)  
+  st.panel <- panel_st(df, agg_met = "method")
+  return(st.panel)
 }
 #+end_src
 
@@ -78,18 +78,18 @@ lpaggreg_utilization <- function(TRACE.pjdump) {
   trace <- parsepjdump(TRACE.pjdump)
   micro <- pjdump2micro(trace, 100,"State",FALSE)
   odf <- oaggregate(micro$data, th)
-  qualplot(odf)
+  q.plot <- qualplot(odf)
   #odf$POpt
   list_of_ps <- as.list(unique(odf$Partitions$Parameter, 3))
   str(list_of_ps)
-  lapply(list_of_ps,
+  lapply(list_of_ps[[1]],
        function(p){
            oplot_stacked_state(omacro(odf$Partitions, micro, p)) +
                coord_cartesian(ylim=c(0,0.0100), xlim=c(0,100)) +
                ggtitle(paste("p:", p, "optimale:", p==odf$POpt)) +
              scale_fill_manual(values = my.colors)
        }) -> z
-  z
+  return(list(q.plot, z))
 }
 #+end_src
 
@@ -101,13 +101,12 @@ lpaggreg_utilization <- function(TRACE.pjdump) {
 :END:
 #+begin_src R :results output :session *R* :exports both :noweb yes :colnames yes
 cases.list <- c(
-	"traces/exageo"
-# ,
-#	"traces/chameleon_exps/chameleon_simu_vis_2W+DIF__96000__30",
-#	"traces/chameleon_exps/chameleon_simu_vis_COMMG__96000__30",
-#	"traces/chameleon_exps/chameleon_simu_vis_COMM1N__96000__30",
-#	"traces/chameleon_exps/chameleon_simu_vis_N2GPUL__96000__30",
-#	"traces/chameleon_exps/chameleon_simu_vis_BASE__96000__30"
+	"traces/exageo",
+	"traces/chameleon_exps/chameleon_simu_vis_2W+DIF__96000__30",
+	"traces/chameleon_exps/chameleon_simu_vis_COMMG__96000__30",
+	"traces/chameleon_exps/chameleon_simu_vis_COMM1N__96000__30",
+	"traces/chameleon_exps/chameleon_simu_vis_N2GPUL__96000__30",
+	"traces/chameleon_exps/chameleon_simu_vis_BASE__96000__30"
   )
 cases.list
 #+end_src
@@ -123,8 +122,10 @@ lapply(cases.list, function(ELEMENT) {
     TRACE.pjdump <- paste0(TRACE.signature, ".pjdump")
     TRACE.pdf <-  paste0(TRACE.signature, ".pdf")
     pdf(file=TRACE.pdf)    
-    read_starvz_export_pjdump(TRACE.dir, TRACE.signature)
-    lpaggreg_utilization(TRACE.pjdump)
+    p <- read_starvz_export_pjdump(TRACE.dir, TRACE.signature)
+    print(p)
+    p <- lpaggreg_utilization(TRACE.pjdump)
+    print(p)
     dev.off()
   }) -> z
 #+end_src
