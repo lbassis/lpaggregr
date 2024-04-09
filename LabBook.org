@@ -55,6 +55,16 @@ generate_hierarchy <- function(df) {
   my.duration <- my.end - my.start
 
   bind_rows(
+                                        # Level-0 (0)
+    tibble(Container = "Container",
+           Parent = "0",
+           Type = "0",
+           Start = my.start,
+           End = my.end,
+           Duration = my.duration,
+           Name = "0") |>
+    select(Container, Parent, Type, Start, End, Duration, Name)
+   ,
                                         # Level-0 (Root)
     tibble(Container = "Container",
            Parent = "0",
