@@ -13,6 +13,16 @@ generate_hierarchy <- function(df) {
   my.duration <- my.end - my.start
 
   bind_rows(
+                                        # Level-0 (0)
+    tibble(Container = "Container",
+           Parent = "0",
+           Type = "0",
+           Start = my.start,
+           End = my.end,
+           Duration = my.duration,
+           Name = "0") |>
+    select(Container, Parent, Type, Start, End, Duration, Name)
+   ,
                                         # Level-0 (Root)
     tibble(Container = "Container",
            Parent = "0",
@@ -93,24 +103,46 @@ read_starvz_export_pjdump <- function(TRACE.base, TRACE.signature) {
 options(crayon.enabled=FALSE)
 library(tidyverse)
 library(lpaggregr)
+color_generator_Clusters <- function(stringlist, aggString=c("")){
+  colors=rep("black", length(stringlist))
+  names(colors)=stringlist
+  colors["Cluster 1"]="green"
+  colors["Cluster 2"]="yellow"
+  colors["Cluster 3"]="red"
+  colors["Cluster 4"]="darkgreen"
+  colors["Cluster 5"]="deeppink"
+  colors["Cluster 6"]="darkviolet"
+  colors["Cluster 7"]="navajowhite1"
+  colors["Cluster 8"]="orange"
+  colors["Cluster 9"]="cyan"
+  colors["Cluster 10"]="darkolivegreen2"
+  colors["Cluster 11"]="peru"
+  colors["Duration Filtered"]="black"
+  colors["Noise"]="grey"
+  names(colors)=stringlist
+  colors
+}
+
 lpaggreg_utilization <- function(TRACE.pjdump) {
-  th=0.0001
-  #Without hierarchy
+  th=0.1
+  #Aggregation
   trace <- parsepjdump(TRACE.pjdump)
-  micro <- pjdump2micro(trace, 100,"State",FALSE)
+  micro <- pjdump2micro(trace, 100,"State", TRUE)
   odf <- oaggregate(micro$data, th)
+  hdf <- haggregate(micro$data, micro$hierarchy, th)   # Hierarchy
   q.plot <- qualplot(odf)
   #odf$POpt
   list_of_ps <- as.list(unique(odf$Partitions$Parameter, 3))
   str(list_of_ps)
-  lapply(list_of_ps[[1]], # apply only for the first one (TODO)
+  lapply(list_of_ps, # apply only for the first one (TODO)
        function(p){
            oplot_stacked_state(omacro(odf$Partitions, micro, p)) +
                coord_cartesian(ylim=c(0,0.0100), xlim=c(0,100)) +
                ggtitle(paste("p:", p, "optimale:", p==odf$POpt)) +
              scale_fill_manual(values = my.colors)
        }) -> z
-  return(list(q.plot, z))
+  hplot_treemap_state(hmacro(hdf$Partitions, micro, hdf$POpt), color_generator_Clusters) -> w
+  return(list(q.plot, z, w))
 }
 
 cases.list <- c(
