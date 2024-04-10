@@ -183,11 +183,11 @@ color_generator_Clusters <- function(stringlist, aggString=c("")){
 
 lpaggreg_utilization <- function(TRACE.pjdump) {
   th=0.1
-  #Without hierarchy
+  #Aggregation
   trace <- parsepjdump(TRACE.pjdump)
   micro <- pjdump2micro(trace, 100,"State", TRUE)
   odf <- oaggregate(micro$data, th)
-  hdf <- haggregate(micro$data, micro$hierarchy, th)  
+  hdf <- haggregate(micro$data, micro$hierarchy, th)   # Hierarchy
   q.plot <- qualplot(odf)
   #odf$POpt
   list_of_ps <- as.list(unique(odf$Partitions$Parameter, 3))
